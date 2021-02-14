@@ -1,21 +1,39 @@
-from socket import socket, AF_INET, SOCK_DGRAM, SOL_SOCKET, SO_BROADCAST
-import sys, datetime
+#!/usr/bin/env python3
+# coding=utf-8
+import sys
+import datetime
+from argparse import ArgumentParser
+from socket import socket, AF_INET, SOCK_DGRAM
+from socket import SOL_SOCKET, SO_BROADCAST
 import asyncio
 from bleak import BleakClient
 
 GATT_CHARACTERISTIC_UUID_TX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e'
 GATT_CHARACTERISTIC_UUID_RX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e'
 
-address = sys.argv[1]
-dest = sys.argv[2]
-port = int(sys.argv[3])
+usage = 'python3 {} [--id bt_addr] [--sec sec] [--dest dest_addr] [--port port] [--verbose]'.format(__file__)
+argparser =  ArgumentParser(usage=usage)
+argparser.add_argument('-i', '--id',   type=str,   dest='id',   default='xx:xx:xx:xx:xx',  help='device mac addres to connect')
+argparser.add_argument('-d', '--dest', type=str,   dest='dest', default='255.255.255.255', help='destination mac address to broadcast')
+argparser.add_argument('-p', '--port', type=int,   dest='port', default=6667,              help='destination port number to broadcast')
+argparser.add_argument('-s', '--sec',  type=float, dest='sec',  default=1.0,               help='measurement interval') 
+argparser.add_argument('-v', '--verbose',          dest='verbose', action='store_true',    help='dump result to stdout')
+args = argparser.parse_args()
+
+id = args.id
+dest = args.dest
+port = args.port
+sec = args.sec
+verbose = args.verbose
+
 buffer = bytearray()
 
 s = socket(AF_INET, SOCK_DGRAM)
 s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
 
 def on_value(voltage, current, wattage, timestamp):
-    print("{3} {0:.1f}[V] {1:.1f}[mA] {2:.1f}[W]".format(voltage, current, wattage, timestamp))
+    if verbose:
+        print("{3} {0:.1f}[V] {1:.1f}[mA] {2:.1f}[W]".format(voltage, current, wattage, timestamp))
     msg = '{ "voltage":' + str(voltage) + ',"current":' + str(current) + ',"power":' + str(wattage) + '}'
     s.sendto(msg.encode(), (dest, port))   
  
@@ -34,7 +52,7 @@ def on_notify(sender, data: bytearray):
         on_value(v, c, w, t)
 
 async def run(loop):
-    client = BleakClient(address)
+    client = BleakClient(id)
     await client.connect()
     print("connected!")
 
@@ -53,7 +71,7 @@ async def run(loop):
         await client.write_gatt_char(tx, command, True)
         # print("write_gatt_char")
     
-        await asyncio.sleep(1.0, loop=loop)
+        await asyncio.sleep(sec, loop=loop)
 
     await client.stop_notify(rx)
     print("stop_notify")
