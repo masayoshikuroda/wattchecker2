@@ -9,4 +9,4 @@ RS-BTWATTCH2に接続して、計測された値をUDPでブロードキャス�
 
 ## 使い方
 
-> python wattchecker2.py bt_mac_addr udp_addr udp_port
+> python wattchecker2.py [--id bt_addr] [--sec sec] [--dest dest_addr] [--port port] [--verbose]
