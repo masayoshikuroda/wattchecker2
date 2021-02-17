@@ -11,13 +11,12 @@ from bleak import BleakClient
 GATT_CHARACTERISTIC_UUID_TX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e'
 GATT_CHARACTERISTIC_UUID_RX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e'
 
-usage = 'python3 {} [--id bt_addr] [--sec sec] [--dest dest_addr] [--port port] [--verbose]'.format(__file__)
-argparser =  ArgumentParser(usage=usage)
-argparser.add_argument('-i', '--id',   type=str,   dest='id',   default='xx:xx:xx:xx:xx',  help='device mac addres to connect')
+argparser =  ArgumentParser(description='Connect BTWATTCH2 via bluetooth and broadcast measured values via UDP.')
 argparser.add_argument('-d', '--dest', type=str,   dest='dest', default='255.255.255.255', help='destination mac address to broadcast')
 argparser.add_argument('-p', '--port', type=int,   dest='port', default=6667,              help='destination port number to broadcast')
 argparser.add_argument('-s', '--sec',  type=float, dest='sec',  default=1.0,               help='measurement interval') 
 argparser.add_argument('-v', '--verbose',          dest='verbose', action='store_true',    help='dump result to stdout')
+argparser.add_argument('id',           type=str,                                           help='device mac addres to connect')
 args = argparser.parse_args()
 
 id = args.id
