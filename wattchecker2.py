@@ -55,19 +55,12 @@ async def run(loop):
     await client.connect()
     print("connected!")
 
-    services = await client.get_services()
-    print("get_services")
-
-    tx = services.get_characteristic(GATT_CHARACTERISTIC_UUID_TX)
-    rx = services.get_characteristic(GATT_CHARACTERISTIC_UUID_RX)    
-    print("get_characteristics")
-
-    await client.start_notify(rx, on_notify)
+    await client.start_notify(GATT_CHARACTERISTIC_UUID_RX, on_notify)
     print("start_notify")
 
     command = bytearray.fromhex('aa000108b3')
     while True:
-        await client.write_gatt_char(tx, command, True)
+        await client.write_gatt_char(GATT_CHARACTERISTIC_UUID_TX, command, True)
         # print("write_gatt_char")
     
         await asyncio.sleep(sec, loop=loop)
