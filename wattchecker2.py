@@ -30,6 +30,41 @@ buffer = bytearray()
 s = socket(AF_INET, SOCK_DGRAM)
 s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
 
+def crc8(data):
+    crc = 0x00
+    poly = 0x85
+    
+    for i in range(0, len(data)):
+        crc = crc ^ data[i]
+        for j in range(0, 8):
+            if(crc & 0x80 == 0x80):
+                crc = ((crc << 1) ^ poly) & 0xFF
+            else:
+                crc = (crc << 1)
+    return crc
+
+def build_command(payload):
+    command = bytearray()
+    command.append(0xaa)
+    command.append(0x00)
+    command.append(len(payload))
+    command.extend(payload)
+    command.append(crc8(payload))
+    return command
+
+def build_date_command():
+    dt = datetime.datetime.today()
+    payload = bytearray()
+    payload.append(0x01)
+    payload.append(dt.second)
+    payload.append(dt.minute)
+    payload.append(dt.hour)
+    payload.append(dt.day)
+    payload.append(dt.month - 1)
+    payload.append(dt.year - 1900)
+    payload.append(dt.isoweekday() % 7)
+    return build_command(payload)
+    
 def on_value(voltage, current, wattage, timestamp):
     if verbose:
         print("{3} {0:.1f}[V] {1:.1f}[mA] {2:.1f}[W]".format(voltage, current, wattage, timestamp))
@@ -58,7 +93,10 @@ async def run(loop):
     await client.start_notify(GATT_CHARACTERISTIC_UUID_RX, on_notify)
     print("start_notify")
 
-    command = bytearray.fromhex('aa000108b3')
+    command = build_date_command()
+    await client.write_gatt_char(GATT_CHARACTERISTIC_UUID_TX, command, True)
+
+    command = build_command(bytearray.fromhex('08'))
     while True:
         await client.write_gatt_char(GATT_CHARACTERISTIC_UUID_TX, command, True)
         # print("write_gatt_char")
